@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GitHub 白嫖机 · 一键部署</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0f16;
+    --card: #131a25;
+    --border: #1f2b3d;
+    --fg: #e6edf6;
+    --dim: #8b9bb4;
+    --accent: #3b82f6;
+    --ok: #22c55e;
+    --err: #ef4444;
+  }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #16233a 0%, var(--bg) 60%);
+    color: var(--fg);
+    font: 15px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 16px;
+  }
+  .wrap { width: 100%; max-width: 680px; }
+  h1 {
+    font-size: 26px;
+    letter-spacing: .5px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h1 .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 12px var(--ok);
+  }
+  .sub { color: var(--dim); margin: 8px 0 28px; font-size: 14px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 8px; }
+  input[type=password], input[type=text], select {
+    width: 100%;
+    background: #0d141e;
+    border: 1px solid var(--border);
+    color: var(--fg);
+    border-radius: 9px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 160px; }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    border-radius: 9px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s, transform .05s;
+  }
+  button:hover:not(:disabled) { opacity: .9; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .hint { font-size: 12px; color: var(--dim); margin-top: 10px; }
+  .hint a { color: var(--accent); text-decoration: none; }
+
+  #progress { margin-top: 18px; }
+  .log {
+    font: 12px/1.7 ui-monospace, Consolas, monospace;
+    color: var(--dim);
+    border-left: 2px solid var(--border);
+    padding-left: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .log div { padding: 1px 0; }
+  .log div:last-child { color: var(--fg); }
+
+  .result-card {
+    border: 1px solid rgba(34,197,94,.35);
+    background: linear-gradient(180deg, rgba(34,197,94,.07), transparent);
+  }
+  .result-card h2 { font-size: 17px; margin-bottom: 4px; color: var(--ok); }
+  .field {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .field:last-child { border-bottom: 0; }
+  .field .k { color: var(--dim); font-size: 13px; flex-shrink: 0; }
+  .field .v {
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 14px;
+    word-break: break-all;
+    text-align: right;
+  }
+  .cp {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .cp:hover { border-color: var(--accent); color: var(--fg); }
+  .err { color: var(--err); font-size: 14px; }
+  .code {
+    background: #0d141e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font: 13px/1.6 ui-monospace, Consolas, monospace;
+    color: #9ae6b4;
+    margin-top: 12px;
+    overflow-x: auto;
+  }
+  .spin {
+    display: inline-block; width: 12px; height: 12px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: r .8s linear infinite;
+    vertical-align: -2px; margin-right: 6px;
+  }
+  @keyframes r { to { transform: rotate(360deg); } }
+  footer { text-align: center; color: #4a5a70; font-size: 12px; margin-top: 28px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><span class="dot"></span>GitHub 白嫖机</h1>
+  <p class="sub">填一个 GitHub 密钥，自动给你开一台 Windows Server 2025 · 4 核 16G · 最长 6 小时</p>
+
+  <div class="card">
+    <label>GitHub 密钥（Personal Access Token）</label>
+    <input id="token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+
+    <div class="row">
+      <div>
+        <label>运行时长</label>
+        <select id="minutes">
+          <option value="350">350 分钟（最长）</option>
+          <option value="180">3 小时</option>
+          <option value="60">1 小时</option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button id="go" style="width:100%">开始部署</button>
+      </div>
+    </div>
+
+    <p class="hint">
+      密钥需要勾选 <b>repo</b> 和 <b>workflow</b> 权限 ·
+      <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=gh-vps" target="_blank" rel="noopener">点这里一键生成</a><br>
+      密钥只在本次请求内存中使用，不存储、不记录。
+    </p>
+
+    <div id="progress"></div>
+  </div>
+
+  <div id="result"></div>
+
+  <footer>机器到点自动销毁 · 所有资源都跑在你自己的 GitHub 账号下</footer>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let timer = null;
+
+$('#go').addEventListener('click', async () => {
+  const token = $('#token').value.trim();
+  if (!token) { $('#token').focus(); return; }
+  $('#go').disabled = true;
+  $('#result').innerHTML = '';
+  $('#progress').innerHTML = '<div class="log"><div><span class="spin"></span>正在提交…</div></div>';
+
+  try {
+    const r = await fetch('/api/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, minutes: Number($('#minutes').value) }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || '提交失败');
+    poll(data.id);
+  } catch (e) {
+    $('#progress').innerHTML = '<div class="err">' + e.message + '</div>';
+    $('#go').disabled = false;
+  }
+});
+
+async function poll(id) {
+  try {
+    const r = await fetch('/api/task/' + id);
+    const t = await r.json();
+    if (!r.ok) throw new Error(t.error || '任务丢失');
+
+    renderLogs(t.logs);
+
+    if (t.status === 'running') {
+      timer = setTimeout(() => poll(id), 2000);
+      return;
+    }
+
+    $('#go').disabled = false;
+    clearTimeout(timer);
+
+    if (t.status === 'done') {
+      renderResult(t.result, t.elapsed);
+    } else {
+      $('#progress').innerHTML += '<div class="err">❌ ' + (t.error || '未知错误') + '</div>';
+    }
+  } catch (e) {
+    $('#go').disabled = false;
+    $('#progress').innerHTML = '<div class="err">' + e.message + '</div>';
+  }
+}
+
+function renderLogs(logs) {
+  if (!logs || !logs.length) return;
+  const html = logs.map((l, i) =>
+    '<div>' + (i === logs.length - 1 ? '<span class="spin"></span>' : '· ') + escapeHtml(l.s) + '</div>'
+  ).join('');
+  $('#progress').innerHTML = '<div class="log">' + html + '</div>';
+}
+
+function renderResult(res, elapsed) {
+  const row = (k, v, copy) => `
+    <div class="field">
+      <span class="k">${k}</span>
+      <span class="v">${escapeHtml(v)}</span>
+      ${copy ? `<button class="cp" data-copy="${escapeHtml(v)}">复制</button>` : ''}
+    </div>`;
+
+  $('#result').innerHTML = `
+    <div class="card result-card">
+      <h2>✅ 机器已就绪</h2>
+      <p class="hint">耗时 ${elapsed} 秒 · 仓库 <a href="https://github.com/${res.repo}" target="_blank" rel="noopener">${res.repo}</a></p>
+      ${row('RDP 地址', res.address, true)}
+      ${row('用户名', res.username, true)}
+      ${row('备用用户名', res.usernameFull, true)}
+      ${row('密码', res.password, true)}
+      <div class="code">mstsc /v:${escapeHtml(res.address)}</div>
+      <p class="hint" style="margin-top:12px">
+        按 Win+R 输入 mstsc 回车，计算机填地址，用户名和密码照抄上面。<br>
+        地址断了会自动重连，新地址看
+        <a href="https://github.com/${res.repo}/blob/main/status.md" target="_blank" rel="noopener">status.md</a>。
+      </p>
+    </div>`;
+
+  document.querySelectorAll('.cp').forEach((b) => {
+    b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = '已复制'; }
+      catch { b.textContent = '复制失败'; }
+      setTimeout(() => (b.textContent = '复制'), 1500);
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+</script>
+</body>
+</html>
